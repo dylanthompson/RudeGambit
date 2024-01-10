@@ -1,0 +1,75 @@
+[gd_scene load_steps=7 format=3 uid="uid://o8wagy3ymk4m"]
+
+[ext_resource type="PackedScene" uid="uid://cbkvnqr0l0m13" path="res://player_ryan.tscn" id="1_wvc80"]
+[ext_resource type="PackedScene" uid="uid://dt8s377tvepvh" path="res://dummy_enemy.tscn" id="2_14r7t"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_pg0nm"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kclef"]
+size = Vector2(1364, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_duwut"]
+size = Vector2(47, 1169.25)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_qobsv"]
+
+[node name="Combat" type="Node2D"]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(564, 588)
+physics_material_override = SubResource("PhysicsMaterial_pg0nm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(27, 47)
+shape = SubResource("RectangleShape2D_kclef")
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D"]
+position = Vector2(27, 31.5)
+color = Color(0.329412, 1, 0.25098, 1)
+polygon = PackedVector2Array(-679, -30.5, 682, -28.5, 681, 28.5, -681, 29.5)
+
+[node name="PlayerRyan" parent="." instance=ExtResource("1_wvc80")]
+position = Vector2(249, 527)
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+position = Vector2(13.5, 3.625)
+shape = SubResource("RectangleShape2D_duwut")
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D2/CollisionShape2D"]
+position = Vector2(-676.282, -292.97)
+scale = Vector2(0.589744, 1.00331)
+color = Color(0, 1, 1, 1)
+polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1173.02, 875.446, 1128.93, 872.456)
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
+material = SubResource("CanvasItemMaterial_qobsv")
+position = Vector2(1137, 291)
+shape = SubResource("RectangleShape2D_duwut")
+debug_color = Color(0, 0.6, 0.701961, 0.419608)
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D3/CollisionShape2D"]
+position = Vector2(-676.282, -292.97)
+scale = Vector2(0.589744, 1.00331)
+color = Color(0, 1, 1, 1)
+polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1162, 593, 1126, 595)
+
+[node name="StaticBody2D5" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D5"]
+position = Vector2(264, -235)
+shape = SubResource("RectangleShape2D_duwut")
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D5/CollisionShape2D"]
+position = Vector2(-676.282, -292.97)
+scale = Vector2(0.589744, 1.00331)
+color = Color(0, 1, 1, 1)
+polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1178.96, 883.046, 1123, 888.03)
+
+[node name="StaticBody2D4" type="StaticBody2D" parent="."]
+
+[node name="DummyEnemy" parent="." instance=ExtResource("2_14r7t")]
+position = Vector2(628, 549)

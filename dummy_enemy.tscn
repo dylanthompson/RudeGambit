@@ -1,0 +1,86 @@
+[gd_scene load_steps=12 format=3 uid="uid://dt8s377tvepvh"]
+
+[ext_resource type="Script" path="res://DummyEnemy.gd" id="1_vwvgy"]
+[ext_resource type="Texture2D" uid="uid://0alhye005be2" path="res://PC Computer - MapleStory - Wooden Target Dummy.png" id="2_cbull"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fg7ag"]
+size = Vector2(71, 81)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hp0w4"]
+atlas = ExtResource("2_cbull")
+region = Rect2(4, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_icw77"]
+atlas = ExtResource("2_cbull")
+region = Rect2(97, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_76vcx"]
+atlas = ExtResource("2_cbull")
+region = Rect2(190, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7wwqm"]
+atlas = ExtResource("2_cbull")
+region = Rect2(283, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_38k8k"]
+atlas = ExtResource("2_cbull")
+region = Rect2(376, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fs1pq"]
+atlas = ExtResource("2_cbull")
+region = Rect2(469, 309, 93, 103)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_anuf8"]
+atlas = ExtResource("2_cbull")
+region = Rect2(11, 0, 87, 103)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nyueg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hp0w4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_icw77")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_76vcx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7wwqm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_38k8k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fs1pq")
+}],
+"loop": false,
+"name": &"hit",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_anuf8")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[node name="DummyEnemy" type="RigidBody2D"]
+collision_layer = 3
+mass = 0.25
+script = ExtResource("1_vwvgy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(2.5, 3.5)
+shape = SubResource("RectangleShape2D_fg7ag")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_nyueg")
+animation = &"hit"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_shape_entered" from="." to="." method="_on_body_shape_entered"]
+[connection signal="animation_finished" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_animation_finished"]
