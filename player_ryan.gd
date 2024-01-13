@@ -31,32 +31,39 @@ var curWallSlideSpeed = -10
 
 var attackDetails = {
 	'light_punch': {
-		'active': 1,
-		'cooldown': 2,
+		'active': 2,
+		'cooldown': 3,
 		'position': Vector2 (30, -20),
 		'size': Vector2(30, 30),
-		'knockback': Vector2(4000, 0)
+		'knockback': Vector2(500, -1000)
 	},
 	'heavy_punch': {
 		'active': 4,
-		'cooldown': 5,
-		'position': Vector2 (35, -30),
-		'size': Vector2(40, 40),
-		'knockback': Vector2(2000, -10000)
+		'cooldown': 6,
+		'position': Vector2 (35, -45),
+		'size': Vector2(40, 55),
+		'knockback': Vector2(1000, -13000)
 	},
 	'light_kick': {
-		'active': 2,
-		'cooldown': 3,
+		'active': 1,
+		'cooldown': 2,
 		'position': Vector2 (30, 10),
 		'size': Vector2(40, 20),
-		'knockback': Vector2(6000, 0)
+		'knockback': Vector2(500, -1000)
 	},
 	'heavy_kick': {
 		'active': 3,
 		'cooldown': 4,
 		'position': Vector2 (30, -15),
 		'size': Vector2(35, 30),
-		'knockback': Vector2(12000, -2500)
+		'knockback': Vector2(8000, -2500)
+	},
+	'heavy_kick_air': {
+		'active': 2,
+		'cooldown': 3,
+		'position': Vector2 (0, 20),
+		'size': Vector2(85, 35),
+		'knockback': Vector2(12000, 2500)
 	}
 }
 
@@ -75,6 +82,7 @@ var curWallClingsInOneJump = 0
 var curWallJumpsInOneJump = 0
 var curAttackFrame = 0
 var curAttackDetails = null
+var curAttackHitOrBlocked = false
 
 func _physics_process(delta):
 	$AnimatedSprite2D.play()
@@ -91,7 +99,10 @@ func _physics_process(delta):
 	
 	# Processing for air or ground
 	if not is_on_floor():
-		velocity.y += gravity * delta
+		if $AnimatedSprite2D.animation != 'flight':
+			velocity.y += gravity * delta
+		else:
+			pass
 		wasAirBorn = true
 	else:
 		isSuperJump = false
@@ -119,7 +130,7 @@ func _physics_process(delta):
 		
 	# Process State - 3 Phases
 	# Phase 1 - Process break
-	if Input.is_action_just_pressed("heavy_kick") && Input.is_action_just_pressed("light_kick"):
+	if Input.is_action_just_pressed("light_punch") && Input.is_action_just_pressed("light_kick"):
 		if not is_on_floor():
 			if curJumpsinOneJump < MAX_JUMPS_PER_JUMP:
 				$AnimatedSprite2D.animation = 'jump'
@@ -128,12 +139,27 @@ func _physics_process(delta):
 				velocity.y = 0
 		else:
 			$AnimatedSprite2D.animation = 'idle'
+		if curAttackDetails:
+			cancelAttack()
 	# Phase 2 - Process states that terminate on a timer.
 	elif $AnimatedSprite2D.animation == "fall":
 		velocity.x = move_toward(velocity.x, 0, SPEED / ATTACK_SLIDE_FACTOR)
+		
+	elif Input.is_action_just_pressed("heavy_kick") && Input.is_action_just_pressed("light_kick"):
+		if $AnimatedSprite2D.animation == 'flight':
+			$AnimatedSprite2D.animation = 'jump'
+		else:
+			$AnimatedSprite2D.animation = 'flight'
+			if is_on_floor():
+				velocity.y = -50
+			else:
+				velocity.y = 0
+			velocity.x = 0
+			if curAttackDetails:
+				cancelAttack()
 
 	# Handle Jump.
-	elif $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "light_kick":
+	elif $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "heavy_kick_air" || $AnimatedSprite2D.animation == "light_kick":
 	# Let animation play out
 		curAttackDetails = attackDetails[$AnimatedSprite2D.animation]
 		if curAttackFrame >= curAttackDetails.active:
@@ -143,14 +169,20 @@ func _physics_process(delta):
 	
 		if is_on_floor():
 			# on ground, just slide
-			velocity.x = move_toward(velocity.x, 0, SPEED / ATTACK_SLIDE_FACTOR)
+			if curAttackHitOrBlocked && Input.is_action_pressed("jump"):
+				superJumpDownTimer = 1
+				cancelAttack();
+				initiateJump(direction);
+			else:
+				velocity.x = move_toward(velocity.x, 0, SPEED / ATTACK_SLIDE_FACTOR)
 		else:
 			# In air, allow Dash Cancel Normals
 			if curDashesinOneJump < MAX_DASHES_PER_JUMP && Input.is_action_just_pressed('light_punch') && Input.is_action_just_pressed('heavy_punch'):
+				cancelAttack();
 				initiateDash(direction, curDirection, ydirection)
 	# PHase 3 - Check other inputs 
-	elif Input.is_action_just_pressed("jump"):
-		processJump(direction)
+	elif Input.is_action_just_pressed("jump") && $AnimatedSprite2D.animation != 'flight':
+		initiateJump(direction)
 	elif Input.is_action_just_pressed("duck") and is_on_floor():
 		curDashStopTime = DASH_STOP_TIME
 		curDuckStopTime = DUCK_STOP_TIME		
@@ -167,7 +199,10 @@ func _physics_process(delta):
 		$AnimatedSprite2D.animation = 'heavy_punch'
 		curAttackFrame = 0;
 	elif Input.is_action_just_pressed('heavy_kick'):
-		$AnimatedSprite2D.animation = 'heavy_kick'
+		if is_on_floor():
+			$AnimatedSprite2D.animation = 'heavy_kick'
+		else:
+			$AnimatedSprite2D.animation = 'heavy_kick_air'
 		curAttackFrame = 0;
 	elif Input.is_action_just_pressed('light_punch'):
 		$AnimatedSprite2D.animation = 'light_punch'
@@ -183,17 +218,20 @@ func _physics_process(delta):
 	elif $AnimatedSprite2D.animation == "run":
 		# Let dash play out, or allow canceling
 		processRunState(delta, curDirection)
-	elif direction:
-		processDirectionHeld(direction)
+	elif direction || (ydirection && $AnimatedSprite2D.animation == 'flight'):
+		processDirectionHeld(direction, ydirection)
 	else:
 		processNoInput()
 		
 	lastDirection = curDirection
-	move_and_slide()
+	
+	if $AnimatedSprite2D.animation != "flight":
+		move_and_slide()
+	else:
+		move_and_slide()
 	
 	
-	
-func processJump(direction):
+func initiateJump(direction):
 	var collided = get_which_wall_collided()
 	# handle jump from the ground
 	if is_on_floor():
@@ -237,7 +275,10 @@ func processDashState(delta):
 		$AnimatedSprite2D.animation = 'heavy_punch'
 		endDash()
 	elif Input.is_action_just_pressed('heavy_kick'):
-		$AnimatedSprite2D.animation = 'heavy_kick'
+		if is_on_floor():
+			$AnimatedSprite2D.animation = 'heavy_kick'
+		else:
+			$AnimatedSprite2D.animation = 'heavy_kick_air'
 		endDash()
 	elif Input.is_action_just_pressed('light_punch'):
 		$AnimatedSprite2D.animation = 'light_punch'
@@ -278,7 +319,15 @@ func endDash():
 	curDashStopTime = DASH_STOP_TIME
 	curDashSpeed = DASH_SPEED
 
-func processDirectionHeld(direction):
+func processDirectionHeldFlight(direction, ydirection):
+	velocity.x = direction * SPEED
+	velocity.y = ydirection * SPEED
+
+func processDirectionHeld(direction, ydirection):
+	if $AnimatedSprite2D.animation == "flight":
+		processDirectionHeldFlight(direction, ydirection)
+		return
+	
 	var dashCheckDirection;
 	if direction == 1:
 		dashCheckDirection = "move_right"
@@ -318,7 +367,7 @@ func processDirectionHeld(direction):
 						velocity.y = curWallSlideSpeed
 			else:
 				if Input.is_action_just_pressed(dashCheckDirection):
-					processJump(direction)
+					initiateJump(direction)
 		else:
 			$AnimatedSprite2D.animation = "jump"
 		#elif isSuperJump:
@@ -330,14 +379,18 @@ func processDirectionHeld(direction):
 		
 
 func processNoInput():
-	if is_on_floor():
-		velocity.x = move_toward(velocity.x, 0, SPEED / SLIDE_FACTOR)
-		if velocity.x == 0:
-			$AnimatedSprite2D.animation = "idle"
-		else:
-			$AnimatedSprite2D.animation = "slide"
+	if $AnimatedSprite2D.animation == "flight":
+		velocity.x = 0
+		velocity.y = 0
 	else:
-		$AnimatedSprite2D.animation = "jump"
+		if is_on_floor():
+			velocity.x = move_toward(velocity.x, 0, SPEED / SLIDE_FACTOR)
+			if velocity.x == 0:
+				$AnimatedSprite2D.animation = "idle"
+			else:
+				$AnimatedSprite2D.animation = "slide"
+		else:
+			$AnimatedSprite2D.animation = "jump"
 
 func initiateDash(direction, curDirection, yDirection):
 	curYDirection = yDirection
@@ -382,17 +435,23 @@ func disableHitBox():
 	$hitbox.set_position(Vector2(-9999, -9999))
 
 func _on_animated_sprite_2d_animation_finished():
-	if $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "light_kick":
-		$AnimatedSprite2D.animation = "idle"
-		curAttackFrame = 0;
-		curAttackDetails = null
-		disableHitBox()
+	cancelAttack()
+	if $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "heavy_kick_air" || $AnimatedSprite2D.animation == "light_kick":
+		if is_on_floor():
+			$AnimatedSprite2D.animation = "idle"
+		else:
+			$AnimatedSprite2D.animation = "jump"
 	if $AnimatedSprite2D.animation == "fall":
 		$AnimatedSprite2D.animation = "duck"
 
+func cancelAttack():
+	curAttackFrame = 0;
+	curAttackDetails = null
+	curAttackHitOrBlocked = false
+	disableHitBox()
 
 func _on_animated_sprite_2d_frame_changed():
-	if $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "light_kick":
+	if $AnimatedSprite2D.animation == "heavy_punch" || $AnimatedSprite2D.animation == "light_punch" || $AnimatedSprite2D.animation == "heavy_kick" || $AnimatedSprite2D.animation == "heavy_kick_air" || $AnimatedSprite2D.animation == "light_kick":
 		curAttackFrame += 1
 
 
@@ -400,6 +459,8 @@ func _on_hitbox_body_entered(body):
 	var curDirection = 1
 	if $AnimatedSprite2D.flip_h:
 		curDirection = -1;
+	curAttackHitOrBlocked = true
+	velocity.y *= 0.5
 	body.takeDamage(self, curDirection, curAttackDetails)
 	
 

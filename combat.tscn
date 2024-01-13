@@ -17,6 +17,8 @@ size = Vector2(47, 1169.25)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(564, 588)
+collision_layer = 5
+collision_mask = 5
 physics_material_override = SubResource("PhysicsMaterial_pg0nm")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
@@ -32,6 +34,8 @@ polygon = PackedVector2Array(-679, -30.5, 682, -28.5, 681, 28.5, -681, 29.5)
 position = Vector2(249, 527)
 
 [node name="StaticBody2D2" type="StaticBody2D" parent="."]
+collision_layer = 5
+collision_mask = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
 position = Vector2(13.5, 3.625)
@@ -44,6 +48,8 @@ color = Color(0, 1, 1, 1)
 polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1173.02, 875.446, 1128.93, 872.456)
 
 [node name="StaticBody2D3" type="StaticBody2D" parent="."]
+collision_layer = 5
+collision_mask = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
 material = SubResource("CanvasItemMaterial_qobsv")
@@ -58,6 +64,8 @@ color = Color(0, 1, 1, 1)
 polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1162, 593, 1126, 595)
 
 [node name="StaticBody2D5" type="StaticBody2D" parent="."]
+collision_layer = 5
+collision_mask = 5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D5"]
 position = Vector2(264, -235)
@@ -70,6 +78,8 @@ color = Color(0, 1, 1, 1)
 polygon = PackedVector2Array(1123, -7, 1162, -9, 1162, 293, 1178.96, 883.046, 1123, 888.03)
 
 [node name="StaticBody2D4" type="StaticBody2D" parent="."]
+collision_layer = 5
+collision_mask = 5
 
 [node name="DummyEnemy" parent="." instance=ExtResource("2_14r7t")]
 position = Vector2(628, 549)
