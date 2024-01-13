@@ -8,8 +8,9 @@ func _ready():
 func takeDamage(hitter, direction, attackDetails):
 	$AnimatedSprite2D.animation = 'hit'
 	$AnimatedSprite2D.play()
-	print("Damage taken from ", hitter)
-	self.apply_central_force(Vector2(attackDetails['knockback'].x * direction, attackDetails['knockback'].y))
+	if attackDetails:
+		print("Damage taken from ", hitter)
+		self.apply_central_force(Vector2(attackDetails['knockback'].x * direction, attackDetails['knockback'].y))
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):

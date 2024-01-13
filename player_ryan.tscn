@@ -171,16 +171,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_xpp72")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_xpp72")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_mvmrc")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_mvmrc")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_chc5j")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_chc5j")
@@ -190,6 +181,9 @@ animations = [{
 "speed": 11.0
 }, {
 "frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jf5ns")
+}, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_jf5ns")
 }, {
@@ -308,7 +302,7 @@ script = ExtResource("1_pqxut")
 position = Vector2(-1, -17)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_mmpkg")
-animation = &"heavy_kick"
+animation = &"wallcling"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(2, -17.125)

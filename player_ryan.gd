@@ -4,18 +4,19 @@ extends CharacterBody2D
 const SPEED = 300.0
 const DASH_SPEED = 700.0
 const RUN_SPEED = 500
-const AIR_DASH_SPEED = 400.0
+const AIR_DASH_SPEED_HORIZONTAL_ONLY = 700.0
+const AIR_DASH_SPEED_VERTICAL = 450.0
 
 const SUPER_JUMP_VELOCITY = -820.0
 const JUMP_VELOCITY = -450.0
 const SUPER_JUMP_TIMING = 0.25
-const DASH_STOP_TIME = 0.33
+const DASH_STOP_TIME = 0.20
 const DUCK_STOP_TIME = 0.1
 const DOUBLE_TAP_DASH_TIME = 0.1
-const MAX_DASHES_PER_JUMP = 10000
+const MAX_DASHES_PER_JUMP = 1
 const MAX_JUMPS_PER_JUMP = 1
 const MAX_WALLJUMPS_PER_JUMP = 99999
-const MAX_WALLCLING_PER_JUMP = 10
+const MAX_WALLCLING_PER_JUMP = 1
 const MAX_WALL_SLIDE_SPEED = 65.0
 const WALL_SLIDE_ACCELERATION = 1;
 const ATTACK_SLIDE_FACTOR = 11
@@ -37,8 +38,8 @@ var attackDetails = {
 		'knockback': Vector2(4000, 0)
 	},
 	'heavy_punch': {
-		'active': 2,
-		'cooldown': 4,
+		'active': 4,
+		'cooldown': 5,
 		'position': Vector2 (35, -30),
 		'size': Vector2(40, 40),
 		'knockback': Vector2(2000, -10000)
@@ -51,15 +52,13 @@ var attackDetails = {
 		'knockback': Vector2(6000, 0)
 	},
 	'heavy_kick': {
-		'active': 4,
-		'cooldown': 6,
+		'active': 3,
+		'cooldown': 4,
 		'position': Vector2 (30, -15),
 		'size': Vector2(35, 30),
 		'knockback': Vector2(12000, -2500)
 	}
 }
-
-
 
 # Get the gravity from the project settings to be synced with RigidBody nodes.
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -79,7 +78,18 @@ var curAttackDetails = null
 
 func _physics_process(delta):
 	$AnimatedSprite2D.play()
-	# Add the gravity.
+	
+	# Initialize variables
+	var curDirection
+	if $AnimatedSprite2D.flip_h:
+		curDirection = -1;
+	else:
+		curDirection = 1;
+		
+	var direction = Input.get_axis("move_left", "move_right")
+	var ydirection = Input.get_axis("jump", "duck")
+	
+	# Processing for air or ground
 	if not is_on_floor():
 		velocity.y += gravity * delta
 		wasAirBorn = true
@@ -94,6 +104,8 @@ func _physics_process(delta):
 			disableHitBox()
 		wasAirBorn = false;
 		
+		
+	# Check timers for multi frame inputs
 	if curDoubleTapDashTime > 0:
 		curDoubleTapDashTime -= delta
 	elif curDoubleTapDashTime < 0:
@@ -104,16 +116,20 @@ func _physics_process(delta):
 	elif superJumpDownTimer < 0:
 		superJumpDownTimer = 0;
 		
-	var curDirection
-	if $AnimatedSprite2D.flip_h:
-		curDirection = -1;
-	else:
-		curDirection = 1;
 		
-	var direction = Input.get_axis("move_left", "move_right")
-	var ydirection = Input.get_axis("jump", "duck")
-	
-	if $AnimatedSprite2D.animation == "fall":
+	# Process State - 3 Phases
+	# Phase 1 - Process break
+	if Input.is_action_just_pressed("heavy_kick") && Input.is_action_just_pressed("light_kick"):
+		if not is_on_floor():
+			if curJumpsinOneJump < MAX_JUMPS_PER_JUMP:
+				$AnimatedSprite2D.animation = 'jump'
+				curJumpsinOneJump += 1
+				velocity.x = 0
+				velocity.y = 0
+		else:
+			$AnimatedSprite2D.animation = 'idle'
+	# Phase 2 - Process states that terminate on a timer.
+	elif $AnimatedSprite2D.animation == "fall":
 		velocity.x = move_toward(velocity.x, 0, SPEED / ATTACK_SLIDE_FACTOR)
 
 	# Handle Jump.
@@ -132,6 +148,7 @@ func _physics_process(delta):
 			# In air, allow Dash Cancel Normals
 			if curDashesinOneJump < MAX_DASHES_PER_JUMP && Input.is_action_just_pressed('light_punch') && Input.is_action_just_pressed('heavy_punch'):
 				initiateDash(direction, curDirection, ydirection)
+	# PHase 3 - Check other inputs 
 	elif Input.is_action_just_pressed("jump"):
 		processJump(direction)
 	elif Input.is_action_just_pressed("duck") and is_on_floor():
@@ -170,13 +187,15 @@ func _physics_process(delta):
 		processDirectionHeld(direction)
 	else:
 		processNoInput()
-
+		
 	lastDirection = curDirection
 	move_and_slide()
 	
 	
 	
 func processJump(direction):
+	var collided = get_which_wall_collided()
+	# handle jump from the ground
 	if is_on_floor():
 		$AnimatedSprite2D.animation = 'duck'
 		if superJumpDownTimer > 0:
@@ -186,7 +205,8 @@ func processJump(direction):
 			isSuperJump = false
 			velocity.y = JUMP_VELOCITY
 	else:
-		if is_on_wall() and curWallJumpsInOneJump < MAX_WALLJUMPS_PER_JUMP:
+		# Handle wall jump
+		if is_on_wall() and curWallJumpsInOneJump < MAX_WALLJUMPS_PER_JUMP && direction == (-1 * collided):
 			$AnimatedSprite2D.animation = 'duck'
 			curWallJumpsInOneJump += 1
 			curDashesinOneJump = 0
@@ -194,8 +214,15 @@ func processJump(direction):
 			curWallClingsInOneJump = 0
 			velocity.x = direction * SPEED;
 			velocity.y = JUMP_VELOCITY			
-			$AnimatedSprite2D.flip_h = not $AnimatedSprite2D.flip_h
-		elif curJumpsinOneJump < MAX_JUMPS_PER_JUMP:
+			$AnimatedSprite2D.flip_h = direction == -1
+		# Handle double jump next to wall
+		elif is_on_wall() and curJumpsinOneJump < MAX_JUMPS_PER_JUMP && direction == (-1 * collided):
+			$AnimatedSprite2D.animation = 'duck'
+			velocity.y = JUMP_VELOCITY
+			curJumpsinOneJump += 1
+			velocity.x = direction * SPEED;
+		# Handle double jump
+		elif !is_on_wall() and curJumpsinOneJump < MAX_JUMPS_PER_JUMP:
 			$AnimatedSprite2D.animation = 'duck'
 			velocity.y = JUMP_VELOCITY
 			curJumpsinOneJump += 1
@@ -292,14 +319,15 @@ func processDirectionHeld(direction):
 			else:
 				if Input.is_action_just_pressed(dashCheckDirection):
 					processJump(direction)
-
+		else:
+			$AnimatedSprite2D.animation = "jump"
 		#elif isSuperJump:
 		velocity.x += direction * (SPEED / 30)
 		if velocity.x > SPEED * 1.25:
 			velocity.x = SPEED * 1.25;
 		if velocity.x < -SPEED * 1.25:
 			velocity.x = -SPEED * 1.25;
-		$AnimatedSprite2D.animation = "jump"
+		
 
 func processNoInput():
 	if is_on_floor():
@@ -318,8 +346,12 @@ func initiateDash(direction, curDirection, yDirection):
 	if is_on_floor():
 		dashSpeedToUse = DASH_SPEED
 	else:
-		dashSpeedToUse = AIR_DASH_SPEED
-		
+		if yDirection != 0:
+			dashSpeedToUse = AIR_DASH_SPEED_VERTICAL
+		else:
+			dashSpeedToUse = AIR_DASH_SPEED_HORIZONTAL_ONLY
+		curDashesinOneJump += 1
+	curDashSpeed = dashSpeedToUse
 	if direction:
 		velocity.x = direction * dashSpeedToUse
 		if direction == -1:
@@ -337,7 +369,6 @@ func initiateDash(direction, curDirection, yDirection):
 		velocity.x = curDirection * dashSpeedToUse
 		
 	$AnimatedSprite2D.animation = "dash"
-	curDashesinOneJump += 1
 
 func _process(delta):
 	pass
@@ -371,3 +402,12 @@ func _on_hitbox_body_entered(body):
 		curDirection = -1;
 	body.takeDamage(self, curDirection, curAttackDetails)
 	
+
+func get_which_wall_collided():
+	for i in range(get_slide_collision_count()):
+		var collision = get_slide_collision(i)
+		if collision.get_normal().x > 0:
+			return -1
+		elif collision.get_normal().x < 0:
+			return 1
+	return 0
